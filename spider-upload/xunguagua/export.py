@@ -6,12 +6,14 @@ import requests
 _URL_ = "http://yun.xunguagua.com/member/?app=member&controller=list&type={type}&page={page}"
 
 cookie = open("./cookie.txt", encoding="UTF-8").read().strip()
-last_time = open("./last-time.txt", encoding="UTF-8").read().strip()
-last_time = round(time.mktime(time.strptime(last_time, '%Y-%m-%d %H:%M:%S')))
 
 results = []
-for type_key in [1, 2]:
+for type_key in ["1", "2"]:
+    last_time = open("./last-time-" + type_key + ".txt", encoding="UTF-8").read().strip()
+    last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
+
     page = 1
+    last_pub_time = None
     while page < 9999:
         headers = {
             "Accept": "*/*",
@@ -42,12 +44,27 @@ for type_key in [1, 2]:
                 page = 10000
                 break
 
-            pub_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(pub_time))
-            results.append(title + "," + pub_time + "," + sent_log["url"])
+            pub_time = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(pub_time))
+            results.append([title, pub_time, sent_log["url"]])
+            if last_pub_time is None:
+                last_pub_time = pub_time
 
         print("page " + str(page) + " finished, current size: " + str(len(results)))
         time.sleep(2)
         page += 1
 
-with open("./sent-list.csv", encoding="GBK", mode="a") as f:
-    f.write("\n".join(results))
+    if last_pub_time is not None:
+        with open("./last-time-" + type_key + ".txt", mode="w") as f:
+            f.write(last_pub_time)
+
+if results:
+    sent_list_f = open("./sent-list.csv", encoding="GBK", mode="w")
+    urls_f = open("./urls.txt", encoding="GBK", mode="w")
+    for result in results:
+        sent_list_f.write(",".join(result) + "\n")
+        urls_f.write(result[2] + "\n")
+    sent_list_f.flush()
+    sent_list_f.close()
+    urls_f.flush()
+    urls_f.close()
+print("found results " + str(len(results)) + " for type " + type_key)
