@@ -1,4 +1,5 @@
 import json
+import os
 import time
 
 import requests
@@ -9,8 +10,10 @@ cookie = open("./cookie.txt", encoding="UTF-8").read().strip()
 
 results = []
 for type_key in ["1", "2"]:
-    last_time = open("./last-time-" + type_key + ".txt", encoding="UTF-8").read().strip()
-    last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
+    last_time = None
+    if os.path.exists("./last-time-" + type_key + ".txt"):
+        last_time = open("./last-time-" + type_key + ".txt", encoding="UTF-8").read().strip()
+        last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
 
     page = 1
     last_pub_time = None
@@ -40,7 +43,7 @@ for type_key in ["1", "2"]:
             title = sent_log["title"].replace(",", "，").strip()
             url = sent_log["url"].strip()
             pub_time = int(sent_log["time"])
-            if pub_time <= last_time:
+            if last_time is not None and pub_time <= last_time:
                 page = 10000
                 break
 
