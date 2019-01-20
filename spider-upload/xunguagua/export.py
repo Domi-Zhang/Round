@@ -26,8 +26,9 @@ def init_session():
 
 def get_last_time(type_key):
     last_time = None
-    if os.path.exists(app_env.get_app_root() + "/xunguagua/last-time-" + type_key + ".txt"):
-        last_time = open(app_env.get_app_root() + "/xunguagua/last-time-" + type_key + ".txt", encoding="UTF-8").read().strip()
+    filename = app_env.get_app_root() + "/xunguagua/last-time-" + type_key + ".txt"
+    if os.path.exists(filename):
+        last_time = open(filename, encoding="UTF-8").read().strip()
         last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
     return last_time
 
@@ -85,8 +86,8 @@ def run_pages(cookie, results, sess, type_key):
 
 
 def write_results(results):
-    sent_list_f = open(app_env.get_app_root() + "/xunguagua/sent-list.csv", encoding="GBK", mode="w")
-    urls_f = open(app_env.get_app_root() + "/xunguagua/urls.txt", encoding="GBK", mode="w")
+    sent_list_f = open(app_env.get_app_root() + "/xunguagua/sent-list.csv", encoding="UTF-8", mode="w")
+    urls_f = open(app_env.get_app_root() + "/xunguagua/urls.txt", encoding="UTF-8", mode="w")
     for result in results:
         sent_list_f.write(",".join(result) + "\n")
         urls_f.write(result[2] + "\n")

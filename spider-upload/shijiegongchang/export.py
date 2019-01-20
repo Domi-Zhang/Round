@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 
 import app_env
 
+_URL = "https://company.ch.gongchang.com/qiye3785770-9aeb/product.html?page={}"
+
 
 def init_session():
     sess = requests.Session()
@@ -23,8 +25,9 @@ def init_session():
 
 def get_last_title():
     last_title = None
-    if os.path.exists(app_env.get_app_root() + "/shijiegongchang/last-title.txt"):
-        last_title = open(app_env.get_app_root() + "/shijiegongchang/last-title.txt", encoding="GBK").read().strip()
+    filename = app_env.get_app_root() + "/shijiegongchang/last-title.txt"
+    if os.path.exists(filename):
+        last_title = open(filename, encoding="UTF-8").read().strip()
     return last_title
 
 
@@ -33,8 +36,7 @@ def run_pages(sess, last_title):
     results = []
     page = 1
     while page < 9999:
-        list_resp = sess.get("https://company.ch.gongchang.com/qiye3785770-9aeb/product.html?page=" + str(page),
-                             verify=False)
+        list_resp = sess.get(_URL.format(page), verify=False)
         list_resp.encoding = "UTF-8"
         html_entity = BeautifulSoup(list_resp.text, 'html.parser')
         links = html_entity.select("#content div.pro-recommend-list a")
@@ -49,7 +51,7 @@ def run_pages(sess, last_title):
 
             if max_title is None:
                 max_title = title
-                with open(app_env.get_app_root() + "/shijiegongchang/last-title.txt", encoding="GBK", mode="w") as f:
+                with open(app_env.get_app_root() + "/shijiegongchang/last-title.txt", encoding="UTF-8", mode="w") as f:
                     f.write(title)
 
             results.append((title, href))
@@ -69,8 +71,8 @@ def run():
 
 
 def write_results(results):
-    sent_list_f = open(app_env.get_app_root() + "/shijiegongchang/sent-list.csv", encoding="GBK", mode="w")
-    urls_f = open(app_env.get_app_root() + "/shijiegongchang/urls.txt", encoding="GBK", mode="w")
+    sent_list_f = open(app_env.get_app_root() + "/shijiegongchang/sent-list.csv", encoding="UTF-8", mode="w")
+    urls_f = open(app_env.get_app_root() + "/shijiegongchang/urls.txt", encoding="UTF-8", mode="w")
     for result in results:
         sent_list_f.write(",".join(result) + "\n")
         urls_f.write(result[1] + "\n")
