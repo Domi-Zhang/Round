@@ -1,4 +1,5 @@
 import os
+import time
 
 import requests
 
@@ -62,4 +63,7 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    while True:
+        run()
+        print("sleeping...")
+        time.sleep(120)
