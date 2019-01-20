@@ -7,7 +7,7 @@ import requests
 import app_env
 
 _URL_ = "http://yun.xunguagua.com/member/?app=member&controller=list&type={type}&page={page}"
-
+_FILE_PATH_LAST_TIME = app_env.get_app_root() + "/xunguagua/last-time-{}.txt"
 
 def init_session():
     sess = requests.Session()
@@ -26,7 +26,7 @@ def init_session():
 
 def get_last_time(type_key):
     last_time = None
-    filename = app_env.get_app_root() + "/xunguagua/last-time-" + type_key + ".txt"
+    filename = _FILE_PATH_LAST_TIME.format(type_key)
     if os.path.exists(filename):
         last_time = open(filename, encoding="UTF-8").read().strip()
         last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
@@ -40,7 +40,7 @@ def run():
     for type_key in ["1", "2"]:
         last_pub_time = run_pages(cookie, results, sess, type_key)
         if last_pub_time is not None:
-            with open(app_env.get_app_root() + "/xunguagua/last-time-" + type_key + ".txt", mode="w") as f:
+            with open(_FILE_PATH_LAST_TIME.format(type_key), encoding="UTF-8", mode="w") as f:
                 f.write(last_pub_time)
 
     if results:
