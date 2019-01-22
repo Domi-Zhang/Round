@@ -51,9 +51,9 @@ def upload(sess, area):
     os.remove("./" + area + "/urls.txt")
 
 
-def run():
-    count1 = sjgcexport.run()
-    count2 = xggexport.run()
+def run(context):
+    count1 = sjgcexport.run(context)
+    count2 = xggexport.run(context)
 
     if count1 > 0 or count2 > 0:
         sess = init_session()
@@ -63,7 +63,19 @@ def run():
 
 
 if __name__ == "__main__":
+    context = dict()
+    context["start_url"] = dict()
+
+    print("输入世界工厂起始url: ")
+    context["start_url"]["sjgc"] = input()
+
+    print("输入讯呱呱（供求）起始url: ")
+    context["start_url"]["xgg1"] = input()
+
+    print("输入讯呱呱（新闻）起始url: ")
+    context["start_url"]["xgg2"] = input()
+
     while True:
-        run()
+        run(context)
         print("sleeping...")
         time.sleep(120)

@@ -1,4 +1,3 @@
-import os
 import time
 
 import requests
@@ -23,16 +22,8 @@ def init_session():
     return sess
 
 
-def get_last_title():
-    last_title = None
-    filename = app_env.get_app_root() + "/shijiegongchang/last-title.txt"
-    if os.path.exists(filename):
-        last_title = open(filename, encoding="UTF-8").read().strip()
-    return last_title
-
-
-def run_pages(sess, last_title):
-    max_title = None
+def run_pages(sess, context):
+    start_url = context["start_url"]
     results = []
     page = 1
     while page < 9999:
@@ -45,26 +36,29 @@ def run_pages(sess, last_title):
             href = link.attrs["href"]
             if href.find("//") == 0:
                 href = "https:" + href
-            if last_title is not None and title == last_title:
+
+            # 没有输入起始url，从启动时发现的第一条url开始计算
+            if not start_url["sjgc"]:
+                start_url["sjgc"] = href
+
+            if start_url["sjgc"] == href:
                 page = 10000
                 break
-
-            if max_title is None:
-                max_title = title
-                with open(app_env.get_app_root() + "/shijiegongchang/last-title.txt", encoding="UTF-8", mode="w") as f:
-                    f.write(title)
 
             results.append((title, href))
         print("page " + str(page) + " finished, current size: " + str(len(results)))
         time.sleep(2)
         page += 1
+
+    if results:
+        # 记录这次抓到的最新的url
+        start_url["sjgc"] = results[0][1]
     return results
 
 
-def run():
-    last_title = get_last_title()
+def run(context):
     sess = init_session()
-    results = run_pages(sess, last_title)
+    results = run_pages(sess, context)
     if results:
         write_results(results)
     return len(results)

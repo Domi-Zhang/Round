@@ -1,5 +1,4 @@
 import json
-import os
 import time
 
 import requests
@@ -7,9 +6,10 @@ import requests
 import app_env
 
 _URL_ = "http://yun.xunguagua.com/member/?app=member&controller=list&type={type}&page={page}"
-_FILE_PATH_LAST_TIME = app_env.get_app_root() + "/xunguagua/last-time-{}.txt"
+
 
 def init_session():
+    cookie = open(app_env.get_app_root() + "/xunguagua/cookie.txt", encoding="GBK").read().strip()
     sess = requests.Session()
     sess.headers.update({
         "Accept": "*/*",
@@ -19,29 +19,17 @@ def init_session():
         "Host": "yun.xunguagua.com",
         "Referer": "http://yun.xunguagua.com/member/?app=member&controller=list",
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0",
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
+        "Cookie": cookie
     })
     return sess
 
 
-def get_last_time(type_key):
-    last_time = None
-    filename = _FILE_PATH_LAST_TIME.format(type_key)
-    if os.path.exists(filename):
-        last_time = open(filename, encoding="UTF-8").read().strip()
-        last_time = round(time.mktime(time.strptime(last_time, '%Y/%m/%d %H:%M:%S')))
-    return last_time
-
-
-def run():
-    cookie = open(app_env.get_app_root() + "/xunguagua/cookie.txt", encoding="UTF-8").read().strip()
+def run(context):
     sess = init_session()
     results = []
     for type_key in ["1", "2"]:
-        last_pub_time = run_pages(cookie, results, sess, type_key)
-        if last_pub_time is not None:
-            with open(_FILE_PATH_LAST_TIME.format(type_key), encoding="UTF-8", mode="w") as f:
-                f.write(last_pub_time)
+        results.extend(run_pages(sess, type_key, context))
 
     if results:
         write_results(results)
@@ -49,14 +37,12 @@ def run():
     return len(results)
 
 
-def run_pages(cookie, results, sess, type_key):
-    last_time = get_last_time(type_key)
+def run_pages(sess, type_key, context):
+    start_url = context["start_url"]
+    results = []
     page = 1
-    last_pub_time = None
     while page < 9999:
-        resp = sess.get(_URL_.format(type=type_key, page=page), headers={
-            "Cookie": cookie
-        })
+        resp = sess.get(_URL_.format(type=type_key, page=page))
         if resp.status_code != 200:
             print("got status code: " + str(resp.status_code))
             break
@@ -70,19 +56,24 @@ def run_pages(cookie, results, sess, type_key):
             title = sent_log["title"].replace(",", "，").strip()
             url = sent_log["url"].strip()
             pub_time = int(sent_log["time"])
-            if last_time is not None and pub_time <= last_time:
+            # 没有输入起始url，从启动时发现的第一条url开始计算
+            if not start_url["xgg"+type_key]:
+                start_url["xgg" + type_key] = url
+
+            if start_url["xgg"+type_key] == url:
                 page = 10000
                 break
 
             pub_time = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(pub_time))
             results.append((title, pub_time, url))
-            if last_pub_time is None:
-                last_pub_time = pub_time
-
         print("page " + str(page) + " finished, current size: " + str(len(results)))
         time.sleep(2)
         page += 1
-    return last_pub_time
+
+    if results:
+        # 记录这次抓到的最新的url
+        start_url["xgg"+type_key] = results[0][1]
+    return results
 
 
 def write_results(results):
